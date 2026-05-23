@@ -1,24 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Bond Risk Dashboard</title>
 
   <link rel="stylesheet" href="https://pyscript.net/releases/2026.3.1/core.css">
   <script type="module" src="https://pyscript.net/releases/2026.3.1/core.js"></script>
 
   <style>
+
+    html,
     body {
       margin: 0;
+      min-height: 100%;
       font-family: Arial, sans-serif;
       color: white;
-      background:
-        linear-gradient(rgba(5, 12, 14, 0.78), rgba(5, 12, 14, 0.88)),
-        url("background.png");
+    }
+
+    body {
+      background-image:
+        linear-gradient(rgba(5, 12, 14, 0.78),
+          rgba(5, 12, 14, 0.88)),
+        url("./background.png");
+
       background-size: cover;
       background-position: center;
+      background-repeat: no-repeat;
       background-attachment: fixed;
+
+      overflow-x: hidden;
     }
 
     .app {
@@ -28,49 +41,87 @@
     .topbar {
       display: flex;
       gap: 10px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
     }
 
     button {
-      background: #222;
+      background: #1d1f20;
       color: white;
-      border: 1px solid #444;
-      padding: 9px 14px;
+      border: 1px solid #404040;
+      padding: 10px 14px;
+      border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
-      border-radius: 6px;
+      transition: 0.15s;
     }
 
     button:hover {
-      background: #333;
+      background: #2b2d2f;
+      border-color: #666;
     }
 
     .panel {
-      background: rgba(10, 15, 16, 0.86);
-      border: 1px solid #2d3b3d;
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 14px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      background: rgba(10, 15, 16, 0.84);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
     }
+
+    textarea {
+      width: 100%;
+      height: 260px;
+
+      background: rgba(10,10,10,0.95);
+      color: white;
+
+      border: 1px solid #444;
+      border-radius: 8px;
+
+      padding: 12px;
+      box-sizing: border-box;
+
+      resize: vertical;
+
+      font-family: Consolas, monospace;
+      font-size: 13px;
+    }
+
+    #paste-panel {
+      display: none;
+    }
+
+    /* KPI GRID */
 
     .kpis {
       display: grid;
-      grid-template-columns: repeat(6, minmax(150px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(6, minmax(160px, 1fr));
+      gap: 14px;
+    }
+
+    .kpi-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 14px;
     }
 
     .kpi-title {
       font-size: 12px;
-      color: #c9d1d1;
+      color: #cfd5d6;
+      margin-bottom: 6px;
     }
 
     .kpi-value {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: bold;
       color: #00ff99;
-      margin-top: 5px;
     }
+
+    /* CALLABLE BUCKETS */
 
     .buckets {
       display: grid;
@@ -79,112 +130,236 @@
       text-align: center;
     }
 
+    .bucket-box {
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
     .bucket-title {
-      font-size: 12px;
-      color: #c9d1d1;
+      font-size: 11px;
+      color: #d0d6d7;
+      margin-bottom: 4px;
     }
 
     .bucket-value {
-      color: #00ff99;
+      font-size: 16px;
       font-weight: bold;
-      margin-top: 4px;
+      color: #00ff99;
     }
 
-    textarea {
-      width: 100%;
-      height: 240px;
-      background: #111;
-      color: white;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 10px;
-      font-family: Consolas, monospace;
-      box-sizing: border-box;
-    }
+    /* TABLE */
 
-    #paste-panel {
-      display: none;
+    .table-wrap {
+      max-height: 60vh;
+      overflow: auto;
+      border-radius: 10px;
+      padding: 0;
     }
 
     table {
       width: 100%;
-      border-collapse: collapse;
-      background: rgba(20, 24, 26, 0.92);
+      border-collapse: separate;
+      border-spacing: 0;
+      background: rgba(18, 20, 22, 0.95);
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 5;
     }
 
     th {
       background: #222;
       color: white;
+
+      padding: 12px;
       cursor: pointer;
-      padding: 10px;
+
       border-bottom: 1px solid #444;
-      position: sticky;
-      top: 0;
+
+      font-size: 13px;
+      font-weight: bold;
+
+      white-space: nowrap;
     }
 
     td {
-      padding: 9px;
+      padding: 10px;
       text-align: center;
       border-bottom: 1px solid #333;
+      font-size: 13px;
     }
 
     tr:hover {
-      background: rgba(0, 255, 153, 0.08);
+      background: rgba(0, 255, 153, 0.06);
     }
 
-    .table-wrap {
-      max-height: 58vh;
-      overflow: auto;
-      border-radius: 10px;
+    /* SCROLLBAR */
+
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
     }
 
-    @media (max-width: 1100px) {
+    ::-webkit-scrollbar-track {
+      background: #111;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #666;
+    }
+
+    /* RESPONSIVE */
+
+    @media (max-width: 1200px) {
+
       .kpis {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
       }
 
       .buckets {
         grid-template-columns: repeat(3, 1fr);
       }
     }
+
+    @media (max-width: 700px) {
+
+      .kpis {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .buckets {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      th,
+      td {
+        font-size: 11px;
+        padding: 8px;
+      }
+    }
+
   </style>
 </head>
 
 <body>
+
   <div class="app">
+
+    <!-- TOP BUTTONS -->
+
     <div class="topbar">
-      <button id="toggle-paste">Paste Raw Data</button>
-      <button id="load-saved">Load Saved Data</button>
-      <button id="clear-data">Clear Saved Data</button>
+
+      <button id="toggle-paste">
+        Paste Raw Data
+      </button>
+
+      <button id="load-saved">
+        Load Saved Data
+      </button>
+
+      <button id="clear-data">
+        Clear Saved Data
+      </button>
+
     </div>
+
+    <!-- PASTE PANEL -->
 
     <div id="paste-panel" class="panel">
-      <textarea id="raw-data" placeholder="Paste SimCompanies bond data here..."></textarea>
+
+      <textarea
+        id="raw-data"
+        placeholder="Paste SimCompanies bond data here..."
+      ></textarea>
+
       <br><br>
-      <button id="save-load">Save & Load Data</button>
+
+      <button id="save-load">
+        Save & Load Data
+      </button>
+
     </div>
+
+    <!-- KPI SUMMARY -->
 
     <div class="panel kpis">
-      <div><div class="kpi-title">Total Outstanding</div><div id="kpi-total" class="kpi-value">$0</div></div>
-      <div><div class="kpi-title">Callable</div><div id="kpi-callable" class="kpi-value">$0</div></div>
-      <div><div class="kpi-title">Recovery Value</div><div id="kpi-recovery" class="kpi-value">$0</div></div>
-      <div><div class="kpi-title">Weighted Risk Amount</div><div id="kpi-risk" class="kpi-value">$0</div></div>
-      <div><div class="kpi-title">Average Bond Amount</div><div id="kpi-average" class="kpi-value">$0</div></div>
-      <div><div class="kpi-title">Total Bond Count</div><div id="kpi-count" class="kpi-value">0</div></div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">Total Outstanding</div>
+        <div id="kpi-total" class="kpi-value">$0</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">Callable</div>
+        <div id="kpi-callable" class="kpi-value">$0</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">Recovery Value</div>
+        <div id="kpi-recovery" class="kpi-value">$0</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">Weighted Risk Amount</div>
+        <div id="kpi-risk" class="kpi-value">$0</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">Average Bond Amount</div>
+        <div id="kpi-average" class="kpi-value">$0</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">Total Bond Count</div>
+        <div id="kpi-count" class="kpi-value">0</div>
+      </div>
+
     </div>
 
-    <div class="panel buckets" id="bucket-row"></div>
+    <!-- CALLABLE BUCKETS -->
 
-    <div class="panel table-wrap">
-      <table>
-        <thead>
-          <tr id="table-head"></tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-      </table>
+    <div class="panel">
+
+      <div class="buckets" id="bucket-row"></div>
+
     </div>
+
+    <!-- TABLE -->
+
+    <div class="panel">
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+            <tr id="table-head"></tr>
+          </thead>
+
+          <tbody id="table-body"></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
   </div>
 
-  <script type="py" src="./main.py" config="./pyscript.json"></script>
+  <script
+    type="py"
+    src="./main.py"
+    config="./pyscript.json"
+  ></script>
+
 </body>
+
 </html>
